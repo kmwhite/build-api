@@ -88,6 +88,42 @@ def build(project = ''):
     redis_uri = "{0}:{1}".format(redis_host, redis_port)
     resq = pyres.ResQ(server=redis_uri)
 
+    # TODO: check that this request fulfills conditions for triggering the
+    # build.
+    #
+    # Possible Conditions:
+    #   - A commit to a certain branch
+    #   - A tag of a certain format
+    #   - a tag of a certain format, gpg-signed by a user in a pre-defined
+    #     keyring.
+    #   - a combination of the above?
+    #
+
+    # TODO: Initialize a state. The build workers can web interface can use
+    # this state file to track what is going on with the build.
+    #
+    #    timestamp = time.strftime('%Y%m%d-%H%M%S')
+    #    # Open and initialize a state file
+    #    state_fname = '%s/%s.%s.state'%(LOG_DIR,timestamp,project)
+    #    state_file = open(state_fname,'wb')
+    #
+    #    #Initialize state object
+    #    state = {
+    #        'project': project,
+    #        'timestamp': timestamp,
+    #        'build': {
+    #            'triggered_repo': repo_name,
+    #            'triggered_ref': repo_ref,
+    #            'cmd': build_cmd,
+    #            'cwd': build_dir,
+    #            'run_error': None,
+    #            'return_status': None,
+    #            'std_out': None,
+    #            }
+    #        }
+    #    cPickle.dump(state, state_file, protocol=2)
+    #    state_file.close()
+
     resq.enqueue(worker.BuildWorker, project)
     return 'Build generated for {0}.\nPayload:\n{1}\n\n'.format(project,
                                                                 payload)
@@ -136,7 +172,16 @@ def builds():
 """
     assert flask.request.method == 'GET'
     out_builds = []
-    # populate list of builds
+    #   # Load build states from pickles:
+    #   state_files = []
+    #   log_files = os.listdir(LOG_DIR)
+    #   for f in log_files: if f[-6:] == ".state": state_files.append(f)
+    #   state_files.sort()
+    #   while len(state_files) > 0:
+    #       f = state_files.pop()
+    #       state_file = open("%s/%s"%(LOG_DIR,f),"rb")
+    #       state = cPickle.load(state_file)
+    #       out_builds.append(state)
     return flask.render_template_string( TEMPLATE,
                                             builds=out_builds,
                                             version=VERSION
@@ -182,8 +227,12 @@ def log(timestamp = '',project = ''):
 </HTML>
 """
     assert flask.request.method == 'GET'
+    state = {}
+    #   state_fname = "%s/%s.%s.state"%(LOG_DIR,timestamp,project)
+    #   state_file = open(state_fname,"rb")
+    #   state = cPickle.load(state_file)
     return flask.render_template_string(TEMPLATE,
-                                            state={},
+                                            state=state,
                                             version=VERSION
                                         )
 
