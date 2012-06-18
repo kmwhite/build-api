@@ -49,20 +49,25 @@ def index():
 @app.route('/build/<string:project>', methods=['POST'])
 def build(project = ''):
     assert flask.request.method == 'POST'
+
+    # Fetch the payload out of params provided by the HTTP POST
     try:
-        # Fetch the payload out of params provided by the HTTP POST
         payload = flask.request.form['payload']
-        # Bind to localhost by default if one isn't provided
-        redis_host = os.environ.get('REDIS_HOST', '127.0.0.1')
-        # Bind on the default redis port if one isn't provided
-        redis_port = os.environ.get('REDIS_PORT', '6379')
-        resq = pyres.ResQ(server="{0}:{1}".format(redis_host, redis_port))
-        resq.enqueue(worker.BuildWorker, project)
-        return 'Build generated for {0}.\nPayload:\n{1}\n\n'.format(project,
-                                                                    payload)
     except KeyError, err:
         print('Payload wasn\'t in the POST Params\n', file=sys.stderr)
         return "No payload provided\n"
+
+    # Bind to localhost by default if one isn't provided
+    redis_host = os.environ.get('REDIS_HOST', '127.0.0.1')
+    # Bind on the default redis port if one isn't provided
+    redis_port = os.environ.get('REDIS_PORT', '6379')
+    # Build the redis server URL
+    redis_uri = "{0}:{1}".format(redis_host, redis_port)
+    resq = pyres.ResQ(server=redis_uri)
+
+    resq.enqueue(worker.BuildWorker, project)
+    return 'Build generated for {0}.\nPayload:\n{1}\n\n'.format(project,
+                                                                payload)
 
 @app.route('/builds', methods=['GET'])
 def builds():
