@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# vi:tabstop=4:expandtab
 
 # DocString
 '''
